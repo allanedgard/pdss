@@ -2,11 +2,18 @@ import random
 import math
 import rpy2.robjects as robjects
 
+# That class implements probabilistic distribution functions from SMPL
+# and allows for integration to all functions available from R environment
+# tracing and reflection support (to be used in PDSS) are still missing
+
 class Randomize:
 
 	def __init__(self,seed1=None):
 		random.seed(seed1)
 		self.__z2 = 0.0
+		self.__x = None
+		self.__function = None
+		self.__next = 0
 
 	def expntl (self,x):
 		return -x * math.log(random.random())
@@ -63,9 +70,35 @@ class Randomize:
 		sn = math.log((s*s/(x*x))+1)
 		return math.exp(self.normal(xn, sn))
 
-	def R(self, funcao):
-		x = robjects.r(funcao)
-		return x[0]
+	def R(self, function):
+		if self.__x == None:
+			self.__x = self.R1(function)
+		if self.__function != function:
+			self.__next = 0
+		self.__function = function
+		n = self.__x[self.__next]
+		self.__next = ( self.__next + 1 ) % len(self.__x)
+		return n
+
+	def R1(self, function):
+		self.__x = robjects.r(function)
+		return self.__x
+
+	def setDistribution(self, dist):
+		pass
+
+	def genericDistribution(self):
+		pass
+
+	def tracing(filename, column):
+		pass
+
+	def handle(self,action):
+  		if hasattr(self,action):
+    			method = getattr(self,action)
+    			method()
+  		else:
+    			print 'Metodo inexistente'
 
 	def geraN(self, n):
 		return [self.normal(2.0,0.5) for i in range(n)]
